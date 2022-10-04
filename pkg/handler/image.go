@@ -10,15 +10,19 @@ import (
 )
 
 func (h *Handler) GetImage(c *gin.Context) {
-	startDate := c.Params.ByName("start_date")
-	endDate := c.Params.ByName("end_date")
-	date := c.Params.ByName("date")
+	startDate := c.Query("start")
+	endDate := c.Query("end")
+	date := c.Query("date")
 
-	if date == "" && endDate == "" && startDate != "" {
+	if date == "" && endDate == "" && startDate == "" {
 		date = time.Now().Format("2006-01-02")
 	}
 
-	if date != "" && endDate != "" && startDate == "" {
+	if date == "" && endDate == "" && startDate != "" {
+		endDate = time.Now().Format("2006-01-02")
+	}
+
+	if date == "" && endDate != "" && startDate == "" {
 		date = endDate
 	}
 
@@ -27,20 +31,26 @@ func (h *Handler) GetImage(c *gin.Context) {
 		return
 	}
 
+	if startDate == endDate && date == "" {
+		date = startDate
+	}
+
 	if date != "" {
-		err := h.service.GetImageByDate(c, date)
+		apod, err := h.service.GetImageByDate(c, date)
 		if err != nil {
 			newErrorResponse(c, http.StatusInternalServerError, err.Error())
 			return
 		}
+		c.JSON(http.StatusOK, &apod)
+		return
 	}
 
-	err := h.service.GetImageByRange(c, startDate, endDate)
+	apod, err := h.service.GetImageByRange(c, startDate, endDate)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-
+	c.JSON(http.StatusOK, &apod)
 }
 
 func validateDate(startDate, endDate, date string) error {
