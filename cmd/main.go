@@ -2,6 +2,7 @@ package main
 
 import (
 	beteratest "betera-test"
+	"betera-test/pkg/client"
 	"betera-test/pkg/handler"
 	"betera-test/pkg/repository"
 	"betera-test/pkg/service"
@@ -32,7 +33,8 @@ func main() {
 	}
 
 	repos := repository.NewRepository(db)
-	service := service.NewService(repos)
+	client := client.NewClient(os.Getenv("APOD_URL"))
+	service := service.NewService(repos, client)
 	handlers := handler.NewHandler(service)
 
 	srv := new(beteratest.Server)
