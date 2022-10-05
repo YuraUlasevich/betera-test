@@ -1,1 +1,1 @@
-DROP TABLE APOD;
+DROP TABLE apod;

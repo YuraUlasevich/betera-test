@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func (h *Handler) GetImage(c *gin.Context) {
@@ -38,6 +39,7 @@ func (h *Handler) GetImage(c *gin.Context) {
 	if date != "" {
 		apod, err := h.service.GetImageByDate(c, date)
 		if err != nil {
+			logrus.Fatal(err)
 			newErrorResponse(c, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -74,7 +76,18 @@ func validateDate(startDate, endDate, date string) error {
 			return fmt.Errorf("Start date %v is greater than end date %v", startDate, endDate)
 		}
 		if endDateTime.After(time.Now()) {
-			return fmt.Errorf("End date %v is greater than now date %v", endDate, time.Now())
+			return fmt.Errorf("Date must be between 1995-06-16 and %v.", time.Now())
+		}
+	}
+
+	if date != "" {
+		dateTime, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			return err
+		}
+
+		if dateTime.After(time.Now()) {
+			return fmt.Errorf("Date must be between 1995-06-16 and %v.", time.Now())
 		}
 	}
 

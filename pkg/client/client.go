@@ -2,8 +2,10 @@ package client
 
 import (
 	"betera-test/pkg/domain"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +14,7 @@ import (
 type ApodClient interface {
 	GetImageByDate(ctx *gin.Context, date string) (*domain.ApodResp, error)
 	GetImageByRange(ctx *gin.Context, startDate, endDate string) (*[]domain.ApodResp, error)
+	GetImage(ctx *gin.Context, url string) (string, error)
 }
 
 type Client struct {
@@ -52,4 +55,22 @@ func (c *Client) GetImageByRange(ctx *gin.Context, startDate, endDate string) (*
 		return nil, err
 	}
 	return apodResp, nil
+}
+
+func (c *Client) GetImage(ctx *gin.Context, url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(bytes)
+
+	return encoded, nil
 }
