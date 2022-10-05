@@ -5,7 +5,6 @@ import (
 	"betera-test/pkg/common"
 	"betera-test/pkg/domain"
 	"betera-test/pkg/repository"
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -54,12 +53,11 @@ func (s *Service) GetImageByDate(ctx *gin.Context, date string) (*domain.ApodRes
 
 	logrus.Info("Get image done")
 
-	id, err := s.Repos.SaveImage(ctx, img, apod.Url, apod.Date)
+	_, err = s.Repos.SaveImage(ctx, img, apod.Url, apod.Date)
 	if err != nil {
 		logrus.Fatal(err)
 		return nil, err
 	}
-	fmt.Println(id)
 	return apod, nil
 }
 
@@ -120,5 +118,22 @@ func (s *Service) GetImageByRange(ctx *gin.Context, startDate, endDate string) (
 	if err != nil {
 		return nil, err
 	}
+
+	for _, v := range *apod {
+		img, err := s.ApodClient.GetImage(ctx, v.Url)
+		if err != nil {
+			logrus.Fatal(err)
+			return nil, err
+		}
+
+		logrus.Info("Get image done")
+
+		_, err = s.Repos.SaveImage(ctx, img, v.Url, v.Date)
+		if err != nil {
+			logrus.Fatal(err)
+			return nil, err
+		}
+	}
+
 	return apod, nil
 }
