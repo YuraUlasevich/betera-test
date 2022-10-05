@@ -26,6 +26,16 @@ func NewService(repos *repository.Repository, client *client.Client) *Service {
 }
 
 func (s *Service) GetImageByDate(ctx *gin.Context, date string) (*domain.ApodResp, error) {
+	dbres, err := s.Repos.GetImageByDate(ctx, date)
+	if err == nil {
+		apod := &domain.ApodResp{
+			Url:  dbres.Url,
+			Date: repository.DateIntToString(dbres.Id),
+		}
+		logrus.Info("Get image from db")
+		return apod, nil
+	}
+
 	apod, err := s.ApodClient.GetImageByDate(ctx, date)
 	if err != nil {
 		logrus.Fatal(err)
