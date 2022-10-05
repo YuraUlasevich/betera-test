@@ -6,6 +6,7 @@ import (
 	"betera-test/pkg/domain"
 	"betera-test/pkg/repository"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -67,7 +68,10 @@ func (s *Service) GetImageByRange(ctx *gin.Context, startDate, endDate string) (
 	endDateInt := common.DateStringToInt(endDate)
 	var dateArr []int
 	for i := startDateInt; i <= endDateInt; i++ {
-		dateArr = append(dateArr, i)
+		_, err := time.Parse("2006-01-02", common.DateIntToString(i))
+		if err == nil {
+			dateArr = append(dateArr, i)
+		}
 	}
 	logrus.Infof("Array of days is %v", dateArr)
 	dbres, err := s.Repos.GetImageByDatesRange(ctx, dateArr)
@@ -85,7 +89,30 @@ func (s *Service) GetImageByRange(ctx *gin.Context, startDate, endDate string) (
 			apods = append(apods, apod)
 		}
 
-		logrus.Info("Get images from db")
+		datesMap := make(map[string]struct{})
+		for _, v := range apods {
+			datesMap[v.Date] = struct{}{}
+		}
+
+		notFoundDates := make([]string, 0)
+		for _, v := range dateArr {
+			if _, ok := datesMap[common.DateIntToString(v)]; !ok {
+				notFoundDates = append(notFoundDates, common.DateIntToString(v))
+			}
+		}
+
+		if len(notFoundDates) == 0 {
+			return &apods, nil
+		}
+
+		for _, v := range notFoundDates {
+			apod, err := s.GetImageByDate(ctx, v)
+			if err != nil {
+				return nil, err
+			}
+			apods = append(apods, *apod)
+		}
+
 		return &apods, nil
 	}
 

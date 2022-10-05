@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+// DaysInMonth := map[int]int{
+// 	1:1,
+
+// }
+
 func DateStringToInt(date string) int {
 	split := strings.Split(date, "-")
 	year, _ := strconv.Atoi(split[0])
