@@ -2,6 +2,7 @@ package service
 
 import (
 	"betera-test/pkg/client"
+	"betera-test/pkg/common"
 	"betera-test/pkg/domain"
 	"betera-test/pkg/repository"
 	"fmt"
@@ -30,7 +31,7 @@ func (s *Service) GetImageByDate(ctx *gin.Context, date string) (*domain.ApodRes
 	if err == nil {
 		apod := &domain.ApodResp{
 			Url:  dbres.Url,
-			Date: repository.DateIntToString(dbres.Id),
+			Date: common.DateIntToString(dbres.Id),
 		}
 		logrus.Info("Get image from db")
 		return apod, nil
@@ -62,6 +63,32 @@ func (s *Service) GetImageByDate(ctx *gin.Context, date string) (*domain.ApodRes
 }
 
 func (s *Service) GetImageByRange(ctx *gin.Context, startDate, endDate string) (*[]domain.ApodResp, error) {
+	startDateInt := common.DateStringToInt(startDate)
+	endDateInt := common.DateStringToInt(endDate)
+	var dateArr []int
+	for i := startDateInt; i <= endDateInt; i++ {
+		dateArr = append(dateArr, i)
+	}
+	logrus.Infof("Array of days is %v", dateArr)
+	dbres, err := s.Repos.GetImageByDatesRange(ctx, dateArr)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dbres) != 0 {
+		apods := []domain.ApodResp{}
+		for _, v := range dbres {
+			apod := domain.ApodResp{
+				Url:  v.Url,
+				Date: common.DateIntToString(v.Id),
+			}
+			apods = append(apods, apod)
+		}
+
+		logrus.Info("Get images from db")
+		return &apods, nil
+	}
+
 	apod, err := s.ApodClient.GetImageByRange(ctx, startDate, endDate)
 	if err != nil {
 		return nil, err
